@@ -30,12 +30,17 @@ CHROMA_PERSIST_DIR = str(BASE_DIR / "chroma_db")
 CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME", "handbook")
 
 # --- Retrieval ----------------------------------------------------------------
-TOP_K = int(os.getenv("TOP_K", "4"))
+# TOP_K=6 (not 4): with CHUNK_SIZE=500, a bulleted section like "Grade
+# Breakdown" (4 sub-items) can split across more than 4 chunks — 4 was
+# clipping the answer to only the first two grading components retrieved.
+TOP_K = int(os.getenv("TOP_K", "6"))
 # Chroma's default "l2" space doesn't map cleanly to a 0-1 similarity, so the
 # collection is created with cosine distance (see ingest.py). With cosine
-# distance, 0.0 = identical, 2.0 = opposite. This threshold is a starting
-# point — tune it during Sprint 4 testing against real handbook questions.
-MAX_RELEVANT_DISTANCE = float(os.getenv("MAX_RELEVANT_DISTANCE", "0.60"))
+# distance, 0.0 = identical, 2.0 = opposite. Raised from 0.60 -> 0.75 after
+# Sprint 4 testing: 0.60 rejected genuinely relevant chunks for some valid
+# phrasings (false "not found"), while 0.75 still rejects truly unrelated
+# questions (verified against test_results/).
+MAX_RELEVANT_DISTANCE = float(os.getenv("MAX_RELEVANT_DISTANCE", "0.75"))
 
 # --- Generation (Groq, OpenAI-compatible API) ---------------------------------
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
