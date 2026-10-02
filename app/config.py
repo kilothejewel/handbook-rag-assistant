@@ -53,3 +53,17 @@ NOT_FOUND_MESSAGE = (
     "I couldn't find anything about that in the student handbook. "
     "Please check with your faculty administrator or student services."
 )
+
+#------Website crawling ------------------
+TARGET_URLS = [
+    "https://www.zaio.io",
+    "https://www.zaio.io/fullstack-ai-engineer-bootcamp",
+    "https://www.zaio.io/bootcamps",
+    "https://www.zaio.io/aboutus",
+    "https://www.zaio.io/tuition-financing",
+    "https://www.zaio.io/compare-courses"
+]
+
+CRAWL_DELAY_SECONDS = 1.0 # to be polite with zaio.io's servers
+
+NOT_FOUND_MESSAGE = "I could not find that information in the available knowledge base."
