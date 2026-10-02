@@ -31,8 +31,9 @@ class Chunk:
     """One retrievable unit of the handbook."""
     id: str
     text: str
-    page: int  # 1-indexed page number, for citations
-
+    source_type: str        # "handbook" or "website"
+    page: int | None = None # 1-indexed page number, for citations
+    url: str | None = None
 
 def extract_pages(pdf_path) -> list[str]:
     """Return a list of page texts, index 0 == page 1."""
