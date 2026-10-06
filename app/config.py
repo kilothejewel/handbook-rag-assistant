@@ -49,21 +49,20 @@ GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
 # is its recommended replacement (see https://console.groq.com/docs/deprecations).
 LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "openai/gpt-oss-20b")
 
-NOT_FOUND_MESSAGE = (
-    "I couldn't find anything about that in the student handbook. "
-    "Please check with your faculty administrator or student services."
-)
-
-#------Website crawling ------------------
+# --- Website crawling ---------------------------------------------------------
+# A fixed, curated list rather than an open-ended crawl of the whole site --
+# that risks pulling in login pages, the affiliate program, and event
+# calendars, which hurts retrieval precision without adding anything a
+# student would actually ask about. Add a page here if it's worth indexing.
 TARGET_URLS = [
     "https://www.zaio.io",
     "https://www.zaio.io/fullstack-ai-engineer-bootcamp",
     "https://www.zaio.io/bootcamps",
     "https://www.zaio.io/aboutus",
     "https://www.zaio.io/tuition-financing",
-    "https://www.zaio.io/compare-courses"
+    "https://www.zaio.io/compare-courses",
 ]
 
-CRAWL_DELAY_SECONDS = 1.0 # to be polite with zaio.io's servers
+CRAWL_DELAY_SECONDS = 1.0  # polite delay between requests -- a one-time offline crawl, not a hot path
 
 NOT_FOUND_MESSAGE = "I could not find that information in the available knowledge base."

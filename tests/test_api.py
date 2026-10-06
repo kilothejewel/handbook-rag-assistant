@@ -26,13 +26,13 @@ def test_health_check():
     assert response.json() == {"status": "ok"}
 
 
-def test_ask_returns_answer_and_source(monkeypatch):
+def test_ask_returns_answer_and_handbook_source(monkeypatch):
     monkeypatch.setattr(
         main,
         "answer_question",
         lambda question: AskResult(
             answer="Attendance must be at least 80%.",
-            source="Page 12",
+            source="Student Handbook - Page 12",
             found=True,
         ),
     )
@@ -42,7 +42,28 @@ def test_ask_returns_answer_and_source(monkeypatch):
     assert response.status_code == 200
     body = response.json()
     assert body["answer"] == "Attendance must be at least 80%."
-    assert body["source"] == "Page 12"
+    assert body["source"] == "Student Handbook - Page 12"
+
+
+def test_ask_returns_answer_and_website_source(monkeypatch):
+    monkeypatch.setattr(
+        main,
+        "answer_question",
+        lambda question: AskResult(
+            answer="The Fullstack AI Engineer bootcamp runs for 7 months.",
+            source="https://www.zaio.io/fullstack-ai-engineer-bootcamp",
+            found=True,
+        ),
+    )
+
+    response = client.post(
+        "/ask", json={"question": "How long is the Fullstack AI Engineer bootcamp?"}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["answer"] == "The Fullstack AI Engineer bootcamp runs for 7 months."
+    assert body["source"] == "https://www.zaio.io/fullstack-ai-engineer-bootcamp"
 
 
 def test_ask_returns_not_found_message_when_out_of_scope(monkeypatch):

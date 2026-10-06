@@ -3,8 +3,15 @@ Part 3 — REST API.
 
     uvicorn app.main:app --reload
 
-POST /ask   {"question": "..."}  ->  {"answer": "...", "source": "Page 12"}
+POST /ask   {"question": "..."}
+    ->  {"answer": "...", "source": "Student Handbook - Page 12"}
+    or  {"answer": "...", "source": "https://www.zaio.io/tuition-financing"}
 GET  /health -> {"status": "ok"}
+
+The "source" field resolves to whichever of the two knowledge sources
+(student handbook or the public ZAIO website) actually answered the
+question — see app/rag.py's `_format_source()` for how that's decided when
+the retrieved chunks mix both.
 
 Design choices worth noting for graders (and for n8n, which will call this
 as a plain HTTP node):
@@ -34,7 +41,7 @@ logger = logging.getLogger("handbook_assistant")
 
 app = FastAPI(
     title="Handbook Assistant API",
-    description="RAG-powered Q&A over the student handbook.",
+    description="RAG-powered Q&A over the student handbook and the ZAIO website.",
     version="0.1.0",
 )
 

@@ -2,10 +2,11 @@
 Unit tests for the chunking logic (Part 1 / Part 4 of the rubric).
 
 These tests never touch a real PDF, the embedding model, or the network —
-they call `chunk_pages` directly with plain strings. That's the point of
-keeping chunk_pages a pure function: it's fast and deterministic to test.
+they call `chunk_pages`/`chunk_website_pages` directly with plain strings.
+That's the point of keeping them pure functions: fast and deterministic to
+test.
 """
-from app.ingest import chunk_pages
+from app.ingest import Chunk, chunk_pages, chunk_website_pages
 
 
 def test_chunk_pages_tags_each_chunk_with_its_page_number():
@@ -44,3 +45,46 @@ def test_chunk_ids_are_unique():
 
     ids = [c.id for c in chunks]
     assert len(ids) == len(set(ids))
+
+
+def test_chunk_website_pages_tags_each_chunk_with_its_url():
+    pages = [
+        ("https://www.zaio.io/aboutus", "About Zaio content. " * 20),
+        ("https://www.zaio.io/bootcamps", "Bootcamps content. " * 20),
+    ]
+
+    chunks = chunk_website_pages(pages, chunk_size=100, chunk_overlap=20)
+
+    assert chunks, "expected at least one chunk"
+    assert {c.url for c in chunks} == {
+        "https://www.zaio.io/aboutus",
+        "https://www.zaio.io/bootcamps",
+    }
+    assert all(c.source_type == "website" for c in chunks)
+    assert all(c.page is None for c in chunks)
+    for c in chunks:
+        if c.url == "https://www.zaio.io/aboutus":
+            assert "Bootcamps content" not in c.text
+
+
+def test_chunk_website_pages_skips_pages_that_clean_down_to_nothing():
+    pages = [("https://www.zaio.io/empty", "   "), ("https://www.zaio.io/real", "Real content here.")]
+
+    chunks = chunk_website_pages(pages, chunk_size=100, chunk_overlap=10)
+
+    assert all(c.url == "https://www.zaio.io/real" for c in chunks)
+
+
+def test_chunk_website_page_ids_are_unique_and_url_based():
+    pages = [("https://www.zaio.io/aboutus", "Some content. " * 30)]
+    chunks = chunk_website_pages(pages, chunk_size=80, chunk_overlap=10)
+
+    ids = [c.id for c in chunks]
+    assert len(ids) == len(set(ids))
+    assert all("aboutus" in i for i in ids)
+
+
+def test_chunk_dataclass_defaults_page_and_url_to_none():
+    chunk = Chunk(id="x", text="hello", source_type="handbook")
+    assert chunk.page is None
+    assert chunk.url is None
