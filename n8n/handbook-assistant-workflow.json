@@ -1,0 +1,95 @@
+{
+  "name": "Handbook RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ask",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e83c7530-150d-41ec-b3d5-cda44e550e15",
+      "name": "Webhook",
+      "webhookId": "393ed164-a2fd-4e1b-81fa-c1455ab55b76"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ask",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=  {\n    \"question\": \"={{ $json.body.question }}\"\n  }",
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6cf3aa6e-9954-4816-a8ac-18f89157e101",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        416,
+        0
+      ],
+      "id": "ea6b1077-3130-4dbf-81e1-afcc1d974e37",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "7eedbebe-d401-47f4-913e-e2b27a68f54d",
+  "meta": {
+    "instanceId": "a8a4a087ba9697bb325e117f8b014c82e6fe144df00a2f5c52d63857472d18fd"
+  },
+  "nodeGroups": [],
+  "id": "TEyHgYUS9zpLt2D3",
+  "tags": []
+}

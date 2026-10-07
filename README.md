@@ -9,8 +9,10 @@ loads the handbook PDF and crawls six zaio.io pages (`TARGET_URLS` in
 `app/config.py`), chunks and embeds both into one Chroma vector store,
 retrieves relevant passages per question, and generates a grounded answer
 via Groq — refusing rather than guessing when neither source covers the
-question. See [`test_results/test_log.md`](test_results/test_log.md)
-for real Q&A test runs and a documented retrieval limitation.
+question. See [`test_results/test_log_v2.md`](test_results/test_log_v2.md)
+for the full cross-source test run (15 questions spanning both sources,
+plus unanswerable ones) and [`test_results/test_log.md`](test_results/test_log.md)
+for the original handbook-only pass.
 
 ## How it works
 
@@ -84,7 +86,8 @@ app/
   rag.py       Part 2 — retrieval + generation
   main.py      Part 3 — FastAPI app
 tests/         Part 4 — unit tests
-test_results/  Part 4 — logged Q&A test runs
+test_results/  Part 4 — logged Q&A test runs (test_log.md, test_log_v2.md)
+n8n/           Part 5 — exported workflow (handbook-assistant-workflow.json)
 ```
 
 ## n8n integration (Part 5)
@@ -100,24 +103,52 @@ HTTP Request node with no extra setup:
 ### Workflow
 
 An exported n8n workflow is included at
-[`n8n/handbook-assistant-workflow.json`](n8n/handbook-assistant-workflow.json).
-To use it: in n8n, **Import from File** → select that JSON, make sure the API
-is running (`uvicorn app.main:app`), then activate the workflow.
+[`n8n/handbook-assistant-workflow.json`](n8n/handbook-assistant-workflow.json),
+built and verified end-to-end against the live API. To use it: in n8n,
+**Import from File** → select that JSON, make sure the API is running
+(`uvicorn app.main:app`), then activate/publish the workflow (older n8n
+versions use an Active toggle; newer ones, including the one this was
+built on, use a **Publish** button instead).
 
-It wires a trigger to an **HTTP Request** node that calls `POST /ask`:
+It wires three nodes: **Webhook** → **HTTP Request** (`POST /ask`) →
+**Respond to Webhook**.
 
-- **Webhook trigger:** send `{"question": "..."}` to the workflow's webhook URL
-  and it responds with the API's `{"answer", "source"}` JSON.
-- **Chat Trigger** (optional): open the workflow's chat panel and type
-  questions directly.
+- **Webhook trigger:** send `{"question": "..."}` to
+  `http://localhost:5678/webhook/ask` (path `ask`) and it responds with the
+  API's `{"answer", "source"}` JSON, e.g.:
+
+  ```powershell
+  Invoke-RestMethod -Uri "http://localhost:5678/webhook/ask" -Method Post `
+    -ContentType "application/json" `
+    -Body '{"question": "How much are the total fees for the bootcamp?"}'
+  ```
+- **Respond to Webhook** node: set "Respond With" to **First Incoming
+  Item** — it then passes the HTTP Request node's JSON straight through
+  with no body expression needed. ("JSON" mode with a `{{ $json }}`
+  expression stringifies the object instead of forwarding valid JSON —
+  looks right in the editor, fails at runtime.)
 
 If n8n runs in Docker, point the HTTP Request node at
-`http://host.docker.internal:8000/ask` instead of `localhost`.
+`http://host.docker.internal:8000/ask` instead of `localhost`. On Windows,
+if the HTTP Request node reports a refused connection even though uvicorn
+is running, use the literal `http://127.0.0.1:8000/ask` instead of
+`localhost` — some Windows + Node setups resolve `localhost` to IPv6
+(`::1`) first, while uvicorn's default bind is IPv4-only.
 
 ## Known limitations
 
-See [`test_results/test_log.md`](test_results/test_log.md) for the full
-test run and one documented false-negative: a specific phrasing of a
+See [`test_results/test_log.md`](test_results/test_log.md) for the
+original handbook-only false-negative: a specific phrasing of a
 grade-breakdown question was incorrectly refused because the retrieved
 chunk lacked its section heading for context, even though the same
 information answered correctly when the question was reworded.
+
+[`test_results/test_log_v2.md`](test_results/test_log_v2.md) documents the
+same failure mode recurring on a website question ("What bootcamp programs
+does Zaio offer?" wrongly refused, rephrasing fixed it), plus two
+non-bugs worth knowing about: a cross-source answer can pull supporting
+detail from a second chunk while `source` cites only the single
+highest-ranked chunk (so the citation doesn't always reflect everything
+the answer drew on), and the handbook and the website quote two different
+upfront tuition figures (R38,950 vs R42,850) for the same bootcamp — a
+real discrepancy in the source material, not a retrieval error.
